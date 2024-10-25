@@ -13,7 +13,6 @@ public class MovementController : NetworkBehaviour
     [SerializeField] float fireInput;       //yea i wonder why its float too
     [SerializeField] float speed;
     [SerializeField] float drag;
-    [SerializeField] Transform projectileSpawnPosition;
     private InputAction moveAction;
     private InputAction fireAction;
     private Transform planetTransform;
@@ -53,10 +52,9 @@ public class MovementController : NetworkBehaviour
             SnapToSphere();
             HandleRotation();
             MoveCharacter();
-            DrawForwardDirection(transform, 2f, Color.green);
-
-
-
+        
+        
+        
         }
 
 
@@ -192,48 +190,15 @@ public class MovementController : NetworkBehaviour
 
     void Fire()
     {
-        if(IsHost)
-        {
-            NetworkObject bullet = SpawnProjectile(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
-            bullet.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
-            bullet.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);
-
-        }
-        else
-        {
-            if(IsOwner)
-            {
-                RequstNetworkObjectAndFireServerRpc(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
-
-            }
-        }
+        SpawnProjectile(gameObject.transform.position, gameObject.transform.rotation);
     }
-
-    [ServerRpc]
-    private void RequstNetworkObjectAndFireServerRpc(Vector3 position,Quaternion rotation)
-    {
-        NetworkObject networkObject = NetworkObjectPool.Singleton.GetNetworkObject(projectilePrefab, position, rotation);
-
-        // Spawn the NetworkObject over the network
-        networkObject.Spawn();
-        networkObject.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
-        networkObject.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);
-        Debug.Log(transform.forward);
-
-    }
-    private NetworkObject SpawnProjectile(Vector3 position, Quaternion rotation)
+    void SpawnProjectile(Vector3 position, Quaternion rotation)
     {
         // Get an instance from the pool
         NetworkObject networkObject = NetworkObjectPool.Singleton.GetNetworkObject(projectilePrefab, position, rotation);
 
         // Spawn the NetworkObject over the network
         networkObject.Spawn();
-        return networkObject;
-    }
-    private void DrawForwardDirection(Transform transformToDraw, float length = 2f, Color? color = null)
-    {
-        Color lineColor = color ?? Color.red; // Use provided color or default to red
-        Debug.DrawRay(transformToDraw.position, transformToDraw.forward * length, lineColor);
     }
     void OnDrawGizmos()
     {
