@@ -9,7 +9,6 @@ public class LobbyPlayerSingleUI : MonoBehaviour {
 
 
     [SerializeField] private TextMeshProUGUI playerNameText;
-    [SerializeField] private Image characterImage;
     [SerializeField] private Button kickPlayerButton;
 
 
@@ -29,7 +28,6 @@ public class LobbyPlayerSingleUI : MonoBehaviour {
         playerNameText.text = player.Data[LobbyManager.KEY_PLAYER_NAME].Value;
         LobbyManager.PlayerCharacter playerCharacter = 
             System.Enum.Parse<LobbyManager.PlayerCharacter>(player.Data[LobbyManager.KEY_PLAYER_CHARACTER].Value);
-        characterImage.sprite = LobbyAssets.Instance.GetSprite(playerCharacter);
     }
 
     private void KickPlayer() {

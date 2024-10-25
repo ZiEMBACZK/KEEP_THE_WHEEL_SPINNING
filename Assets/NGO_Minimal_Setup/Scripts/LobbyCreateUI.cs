@@ -66,18 +66,8 @@ public class LobbyCreateUI : MonoBehaviour {
             });
         });
 
-        gameModeButton.onClick.AddListener(() => {
-            switch (gameMode) {
-                default:
-                case LobbyManager.GameMode.CaptureTheFlag:
-                    gameMode = LobbyManager.GameMode.Conquest;
-                    break;
-                case LobbyManager.GameMode.Conquest:
-                    gameMode = LobbyManager.GameMode.CaptureTheFlag;
-                    break;
-            }
             UpdateText();
-        });
+        
 
         Hide();
     }
@@ -86,7 +76,6 @@ public class LobbyCreateUI : MonoBehaviour {
         lobbyNameText.text = lobbyName;
         publicPrivateText.text = isPrivate ? "Private" : "Public";
         maxPlayersText.text = maxPlayers.ToString();
-        gameModeText.text = gameMode.ToString();
     }
 
     private void Hide() {
