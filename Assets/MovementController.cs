@@ -104,13 +104,12 @@ public class MovementController : NetworkBehaviour
         {
             // Project the movement direction onto the plane perpendicular to gravity
             Vector3 desiredForward = Vector3.ProjectOnPlane(moveDirection, gravityUp).normalized;
-
-            // Create a rotation that looks in the desired forward direction with the correct up vector
-            Quaternion targetRotation = Quaternion.LookRotation(desiredForward, gravityUp);
-            if (Vector3.Dot(transform.forward, desiredForward) < 0 && moveInput.x != 1 && moveInput.x != -1)
+        if (Vector3.Dot(transform.forward, desiredForward) < 0 && moveInput.x != 1 && moveInput.x != -1)
             {
                 desiredForward = -desiredForward;
             }
+            // Create a rotation that looks in the desired forward direction with the correct up vector
+            Quaternion targetRotation = Quaternion.LookRotation(desiredForward, gravityUp);
 
             // Smoothly rotate towards the target rotation
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
