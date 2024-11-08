@@ -21,6 +21,8 @@ public class MovementController : NetworkBehaviour
     [SerializeField] private Vector3 velocity;
     [SerializeField] private float distanceToPlanet;
     [SerializeField] private GameObject playerModel;
+    [SerializeField] private float shootTimer;
+    [SerializeField] private float shootCooldown;
     [SerializeField] private float rotationSpeed;
     [SerializeField]
     public float groundDistance = 1.1f; 
@@ -55,6 +57,7 @@ public class MovementController : NetworkBehaviour
             HandleRotation();
             MoveCharacter();
             DrawForwardDirection(transform, 2f, Color.green);
+            UpdateShootTimer();
 
 
 
@@ -104,7 +107,7 @@ public class MovementController : NetworkBehaviour
         {
             // Project the movement direction onto the plane perpendicular to gravity
             Vector3 desiredForward = Vector3.ProjectOnPlane(moveDirection, gravityUp).normalized;
-        if (Vector3.Dot(transform.forward, desiredForward) < 0 && moveInput.x != 1 && moveInput.x != -1)
+            if (Vector3.Dot(transform.forward, desiredForward) < 0 && moveInput.x != 1 && moveInput.x != -1)
             {
                 desiredForward = -desiredForward;
             }
@@ -152,7 +155,11 @@ public class MovementController : NetworkBehaviour
         fireInput = fireAction.ReadValue<float>();
         if(fireInput >0)
         {
-            Fire();
+            if(CanShoot())
+            {
+                Fire();
+                
+            }
         }
         return fireInput;
 
@@ -172,7 +179,23 @@ public class MovementController : NetworkBehaviour
     }
     private bool CanShoot()
     {
-        return true;
+
+        if(shootTimer >= shootCooldown)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    private void UpdateShootTimer()
+    {
+        shootTimer += Time.deltaTime;
+    }
+    private void ResetShootTimer()
+    {
+        shootTimer = 0;
     }
     private void MoveCharacter()
     {
@@ -200,6 +223,7 @@ public class MovementController : NetworkBehaviour
 
     void Fire()
     {
+        ResetShootTimer();
         if(IsHost)
         {
             NetworkObject bullet = SpawnProjectile(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
