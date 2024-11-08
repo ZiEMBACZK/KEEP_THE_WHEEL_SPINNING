@@ -171,6 +171,10 @@ public class MovementController : NetworkBehaviour
         return isGrounded;
 
     }
+    private bool CanShoot()
+    {
+        return true;
+    }
     private void MoveCharacter()
     {
         Vector2 movementVector = GetMovementDirection();
