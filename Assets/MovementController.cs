@@ -22,6 +22,7 @@ public class MovementController : NetworkBehaviour
     [SerializeField] private float distanceToPlanet;
     [SerializeField] private GameObject playerModel;
     [SerializeField] private float rotationSpeed;
+    [SerializeField]
     public float groundDistance = 1.1f; 
     public float groundDistance2;
     [SerializeField] private LayerMask layerMask;
@@ -106,6 +107,10 @@ public class MovementController : NetworkBehaviour
 
             // Create a rotation that looks in the desired forward direction with the correct up vector
             Quaternion targetRotation = Quaternion.LookRotation(desiredForward, gravityUp);
+            if (Vector3.Dot(transform.forward, desiredForward) < 0 && moveInput.x != 1 && moveInput.x != -1)
+            {
+                desiredForward = -desiredForward;
+            }
 
             // Smoothly rotate towards the target rotation
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
