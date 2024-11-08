@@ -1,22 +1,72 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.Events;
+using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
-public class GameManager : MonoBehaviour
+public class GameManager : NetworkBehaviour 
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public static GameManager Instance { get; private set; }
+    [SerializeField] private bool restartStarted;
+    [SerializeField] public UnityEvent onSceneRestart;
+
     void Start()
     {
-        //LobbyManager.Instance.OnJoinedLobby += StartGameScene;
-        
+        // Check if an instance of GameManager already exists
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // Persist between scenes
+        }
+        else if (Instance != this)
+        {
+            Destroy(gameObject); // Enforce the singleton pattern
+        }
+    }
+    public void StartGame()
+    {
+        Debug.Log("Game started!");
+        // Add game-starting logic here
     }
 
-    // Update is called once per frame
-    void Update()
+    // Example method to demonstrate functionality
+    public void EndGame()
     {
-        
+        Debug.Log("Game ended!");
+        // Add game-ending logic here
     }
-    private void StartGameScene()
+    public void RestartGame()
     {
+        if(!restartStarted)
+        {
+            if(IsHost)
+            {
+                StartCoroutine(RestartGameCorutine(5));
+            }
+            else
+            {
+                if(IsOwner)
+                {
+                    RequestRestartSceneServerRpc();
+
+                }
+            }
+
+        }
+        restartStarted = true;
+    }
+    [ServerRpc]
+    private void RequestRestartSceneServerRpc()
+    {
+        StartCoroutine(RestartGameCorutine(5));
+    }
+    private IEnumerator RestartGameCorutine(float waitBeforeSceneChange)
+    {
+        yield return new WaitForSeconds(waitBeforeSceneChange);
+        restartStarted = false;
+        onSceneRestart.Invoke();
         NetworkManager.Singleton.SceneManager.LoadScene("NGO_Setup", UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 }

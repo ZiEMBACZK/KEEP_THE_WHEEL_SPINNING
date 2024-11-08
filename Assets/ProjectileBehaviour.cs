@@ -7,12 +7,14 @@ public class ProjectileBehaviour : NetworkBehaviour
     public float bulletSpeed;
     public Transform planetTransform;
     [SerializeField] private float distanceFromGround;
+    [SerializeField] private GameObject bulletPrefab;               //yes we hold referance to bulletPrefab inside bulletPrefab why beacus networkPool need this is this smart no do i care no
     private void Awake()
     {
     }
     private void Start()
     {
         planetTransform = FauxGravitySingleton.Instance.PlanetTransfom;
+        GameManager.Instance.onSceneRestart.AddListener(OnSceneReload);
         
     }
 
@@ -46,5 +48,20 @@ public class ProjectileBehaviour : NetworkBehaviour
         Vector3 tangent = Vector3.Cross(gravityUp, bulletDirection.normalized); 
 
         transform.position += tangent * bulletSpeed * Time.deltaTime;
+    }
+    private void OnSceneReload()
+    {
+        Destroy(gameObject);
+                                                                                                                 //TOO BAD!
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.GetComponent<MovementController>())
+        {
+            Debug.Log("Bullet Hit!");
+            other.GetComponent<MovementController>().PlayerHitBehaviour();
+
+        }
+        
     }
 }

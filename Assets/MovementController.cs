@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,6 +14,7 @@ public class MovementController : NetworkBehaviour
     [SerializeField] float fireInput;       //yea i wonder why its float too
     [SerializeField] float speed;
     [SerializeField] float drag;
+    [SerializeField] bool inputEnabled = false;
     [SerializeField] Transform projectileSpawnPosition;
     private InputAction moveAction;
     private InputAction fireAction;
@@ -24,13 +26,13 @@ public class MovementController : NetworkBehaviour
     [SerializeField] private float shootTimer;
     [SerializeField] private float shootCooldown;
     [SerializeField] private float rotationSpeed;
-    [SerializeField]
-    public float groundDistance = 1.1f; 
+    [SerializeField] private Animator animator;
+    public float groundDistance = 1.1f;
     public float groundDistance2;
     [SerializeField] private LayerMask layerMask;
     private Vector3 moveDirection;
     [SerializeField] private Camera playerCamera;
-   [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private GameObject projectilePrefab;
 
     private void Start()
     {
@@ -40,6 +42,8 @@ public class MovementController : NetworkBehaviour
             fireAction = InputSystem.actions.FindAction(fireInputString);
             planetTransform = FauxGravitySingleton.Instance.PlanetTransfom;
             playerCamera.gameObject.SetActive(true);
+            inputEnabled = true;
+            GameManager.Instance.onSceneRestart.AddListener(ResetSceneBehaviour);
 
         }
     }
@@ -71,22 +75,25 @@ public class MovementController : NetworkBehaviour
     }
     private void Gravity()
     {
-        if(!IsgroundedCheck())
+        if (!IsgroundedCheck())
         {
             //velocity += (GetGravityVector() * gravity) * Time.deltaTime;
             //GetComponent<Rigidbody>().AddForce(GetGravityVector() * gravity * Time.deltaTime);
         }
         else
         {
-           // velocity = Vector3.zero;
+            // velocity = Vector3.zero;
         }
         Debug.Log(IsgroundedCheck());
 
     }
     private void GetInput()
     {
+        if(inputEnabled)
+        {
             GetFireInput();
             GetMovementDirection();
+        }
 
     }
     private void ApplyDrag()
@@ -119,26 +126,26 @@ public class MovementController : NetworkBehaviour
         }
         else
         {
-            // When there's no movement input, adjust only the up vector
+            //// When there's no movement input, adjust only the up vector
 
-            // Get the current forward direction
-            Vector3 currentForward = transform.forward;
+            //// Get the current forward direction
+            //Vector3 currentForward = transform.forward;
 
-            // Project the current forward onto the plane perpendicular to gravity
-            Vector3 projectedForward = Vector3.ProjectOnPlane(currentForward, gravityUp).normalized;
+            //// Project the current forward onto the plane perpendicular to gravity
+            //Vector3 projectedForward = Vector3.ProjectOnPlane(currentForward, gravityUp).normalized;
 
-            // Handle the case when the projected forward vector is too small
-            if (projectedForward.sqrMagnitude < 0.001f)
-            {
-                // Use a default forward vector perpendicular to gravityUp
-                projectedForward = Vector3.Cross(transform.right, gravityUp).normalized;
-            }
+            //// Handle the case when the projected forward vector is too small
+            //if (projectedForward.sqrMagnitude < 0.001f)
+            //{
+            //    // Use a default forward vector perpendicular to gravityUp
+            //    projectedForward = Vector3.Cross(transform.right, gravityUp).normalized;
+            //}
 
-            // Create a rotation with the current forward and adjusted up vector
-            Quaternion currentRotation = Quaternion.LookRotation(projectedForward, gravityUp);
+            //// Create a rotation with the current forward and adjusted up vector
+            //Quaternion currentRotation = Quaternion.LookRotation(projectedForward, gravityUp);
 
-            // Apply the rotation
-            transform.rotation = currentRotation;
+            //// Apply the rotation
+            //transform.rotation = currentRotation;
         }
     }
     private Vector3 GetMovementDirection()
@@ -150,15 +157,23 @@ public class MovementController : NetworkBehaviour
         return moveDirection;
 
     }
+    private void animateMovement()
+    {
+        if (moveInput.y > 0)
+        {
+            //animator.SetTrigger()
+        }
+    }
+
     private float GetFireInput()
     {
         fireInput = fireAction.ReadValue<float>();
-        if(fireInput >0)
+        if (fireInput > 0)
         {
-            if(CanShoot())
+            if (CanShoot())
             {
                 Fire();
-                
+
             }
         }
         return fireInput;
@@ -180,7 +195,7 @@ public class MovementController : NetworkBehaviour
     private bool CanShoot()
     {
 
-        if(shootTimer >= shootCooldown)
+        if (shootTimer >= shootCooldown)
         {
             return true;
         }
@@ -199,7 +214,6 @@ public class MovementController : NetworkBehaviour
     }
     private void MoveCharacter()
     {
-        Vector2 movementVector = GetMovementDirection();
 
         transform.Translate(moveDirection.normalized * speed * Time.deltaTime, Space.World);
     }
@@ -212,14 +226,52 @@ public class MovementController : NetworkBehaviour
         // Position the character at the correct distance from the planet's center
         transform.position = planetTransform.position + gravityUp * groundDistance2;
     }
+    public void PlayerHitBehaviour()
+    {
+        if(IsOwner)
+        {
+            ToogleInput(false);
+            moveDirection = Vector3.zero;
+            //Implement explosion effect
+            GameManager.Instance.RestartGame();
+
+        }
+
+    }
+    private void ToogleInput(bool state)
+    {
+        inputEnabled = state;
+    }
+    private void DespawnAllNetworkObjects()
+    {
+        foreach (var networkObject in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
+        {
+            // Skip the player objects if you don't want to despawn them
+            if (networkObject.IsPlayerObject)
+                continue;
+
+            if (networkObject != null && networkObject.IsSpawned)
+            {
+                networkObject.Despawn(true); // Passing true to destroy the object
+            }
+        }
+    }
+    private void ResetSceneBehaviour()
+    {
+        Destroy(gameObject);
+    }
+    private void OnDestroy()
+    {
+        GameManager.Instance.onSceneRestart.RemoveListener(ResetSceneBehaviour);
+    }
 
 
 
     void Jump()
-    {
-        // Implement jump logic
-        Debug.Log("Jump");
-    }
+        {
+            // Implement jump logic
+            Debug.Log("Jump");
+        }
 
     void Fire()
     {
@@ -228,7 +280,10 @@ public class MovementController : NetworkBehaviour
         {
             NetworkObject bullet = SpawnProjectile(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
             bullet.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
-            bullet.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);
+            bullet.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);                 //I stared into the abbyss
+                                                                                                                            //And abbyss responed
+                                                                                                                            //transform.foward = transform.right * -1
+                                                                                                                            //I never looked at the abbyss again
 
         }
         else
