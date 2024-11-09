@@ -33,6 +33,12 @@ public class MovementController : NetworkBehaviour
     private Vector3 moveDirection;
     [SerializeField] private Camera playerCamera;
     [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private GameObject explosionVFX;
+    [SerializeField] private string animatorFowardTrigger;
+    [SerializeField] private string animatorLeftTrigger;
+    [SerializeField] private string animatorRightTrigger;
+    [SerializeField] private string animatorIdle;
+    [SerializeField] private Vector3 rotationOffset;
 
     private void Start()
     {
@@ -41,9 +47,9 @@ public class MovementController : NetworkBehaviour
             moveAction = InputSystem.actions.FindAction(MoveInputStrng);
             fireAction = InputSystem.actions.FindAction(fireInputString);
             planetTransform = FauxGravitySingleton.Instance.PlanetTransfom;
-            playerCamera.gameObject.SetActive(true);
             inputEnabled = true;
             GameManager.Instance.onSceneRestart.AddListener(ResetSceneBehaviour);
+            GameManager.Instance.camera.Follow = gameObject.transform;
 
         }
     }
@@ -62,8 +68,7 @@ public class MovementController : NetworkBehaviour
             MoveCharacter();
             DrawForwardDirection(transform, 2f, Color.green);
             UpdateShootTimer();
-
-
+            //GameManager.Instance.camera.transform.rotation = gameObject.transform.rotation * Quaternion.Euler(rotationOffset);
 
         }
 
@@ -161,7 +166,19 @@ public class MovementController : NetworkBehaviour
     {
         if (moveInput.y > 0)
         {
-            //animator.SetTrigger()
+            animator.SetTrigger(animatorFowardTrigger);
+        }
+        if(moveInput.y < 0.05f && moveInput.x > 0)
+        {
+            animator.SetTrigger(animatorRightTrigger);
+        }
+        if(moveInput.y < 0.05f && moveInput.x < 0)
+        {
+            animator.SetTrigger(animatorLeftTrigger);
+        }
+        if(moveInput == Vector2.zero)
+        {
+            animator.SetTrigger(animatorIdle);
         }
     }
 
@@ -214,7 +231,6 @@ public class MovementController : NetworkBehaviour
     }
     private void MoveCharacter()
     {
-
         transform.Translate(moveDirection.normalized * speed * Time.deltaTime, Space.World);
     }
     void SnapToSphere()
@@ -231,6 +247,8 @@ public class MovementController : NetworkBehaviour
         if(IsOwner)
         {
             ToogleInput(false);
+            playerModel.SetActive(false);
+            GameObject explosion = Instantiate(explosionVFX, transform);
             moveDirection = Vector3.zero;
             //Implement explosion effect
             GameManager.Instance.RestartGame();
