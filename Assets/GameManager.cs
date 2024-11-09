@@ -5,12 +5,15 @@ using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+using Unity.Cinemachine;
 
 public class GameManager : NetworkBehaviour 
 {
     public static GameManager Instance { get; private set; }
     [SerializeField] private bool restartStarted;
     [SerializeField] public UnityEvent onSceneRestart;
+    [SerializeField] public UnityEvent onSceneFirstStart;
+    [SerializeField] public CinemachineCamera camera;
 
     void Start()
     {
@@ -24,6 +27,7 @@ public class GameManager : NetworkBehaviour
         {
             Destroy(gameObject); // Enforce the singleton pattern
         }
+        onSceneFirstStart.Invoke();
     }
     public void StartGame()
     {
