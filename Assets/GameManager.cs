@@ -6,6 +6,7 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 using Unity.Cinemachine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : NetworkBehaviour 
 {
@@ -22,6 +23,7 @@ public class GameManager : NetworkBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject); // Persist between scenes
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
         else if (Instance != this)
         {
@@ -73,4 +75,35 @@ public class GameManager : NetworkBehaviour
         onSceneRestart.Invoke();
         NetworkManager.Singleton.SceneManager.LoadScene("NGO_Setup", UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
+    private void FindCamera()
+    {
+        if(camera == null)
+        {
+            FindAnyObjectByType(typeof(CinemachineCamera));
+        }
+    }
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        InitializeSceneReferences();
+    }
+    private void InitializeSceneReferences()
+    {
+        camera = FindAnyObjectByType<CinemachineCamera>();                              //this is basicly a crime but with this amout of object in scene it should be ok
+                                                                                        //we propably want to create some kind referances holder that is singelTone but without Dont destroy on load
+                                                                                        //its propably less of a crime but idk 
+
+        if (camera != null)
+        {
+            Debug.Log("Main Camera found and reference updated.");
+        }
+        else
+        {
+            Debug.LogWarning("Main Camera not found in the scene!");
+        }
+    }
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
 }

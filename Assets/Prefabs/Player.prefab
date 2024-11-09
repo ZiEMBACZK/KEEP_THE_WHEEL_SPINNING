@@ -268,11 +268,11 @@ MonoBehaviour:
   gravity: 1
   velocity: {x: 0, y: 0, z: 0}
   distanceToPlanet: 50
-  playerModel: {fileID: 0}
+  playerModel: {fileID: 2522136402687482972}
   shootTimer: 0
   shootCooldown: 0.5
   rotationSpeed: 3
-  animator: {fileID: 0}
+  animator: {fileID: 9127549367011073180}
   groundDistance: 4.98
   groundDistance2: 17.5
   layerMask:
@@ -535,8 +535,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b9ae764dd145d84489dd0f708e7d24b2, type: 3}
+--- !u!1 &2522136402687482972 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b9ae764dd145d84489dd0f708e7d24b2, type: 3}
+  m_PrefabInstance: {fileID: 3441036417315758349}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2903622324000687846 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b9ae764dd145d84489dd0f708e7d24b2, type: 3}
+  m_PrefabInstance: {fileID: 3441036417315758349}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &9127549367011073180 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: b9ae764dd145d84489dd0f708e7d24b2, type: 3}
   m_PrefabInstance: {fileID: 3441036417315758349}
   m_PrefabAsset: {fileID: 0}
