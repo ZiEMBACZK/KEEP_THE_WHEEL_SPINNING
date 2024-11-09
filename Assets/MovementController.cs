@@ -68,7 +68,7 @@ public class MovementController : NetworkBehaviour
             MoveCharacter();
             DrawForwardDirection(transform, 2f, Color.green);
             UpdateShootTimer();
-            //GameManager.Instance.camera.transform.rotation = gameObject.transform.rotation * Quaternion.Euler(rotationOffset);
+            GameManager.Instance.camera.transform.rotation = gameObject.transform.rotation * Quaternion.Euler(rotationOffset);
 
         }
 
