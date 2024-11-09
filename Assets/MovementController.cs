@@ -68,7 +68,8 @@ public class MovementController : NetworkBehaviour
             MoveCharacter();
             DrawForwardDirection(transform, 2f, Color.green);
             UpdateShootTimer();
-            GameManager.Instance.camera.transform.rotation = gameObject.transform.rotation * Quaternion.Euler(rotationOffset);
+            animateMovement();
+            HandleCameraRotation();
 
         }
 
@@ -90,6 +91,11 @@ public class MovementController : NetworkBehaviour
             // velocity = Vector3.zero;
         }
         Debug.Log(IsgroundedCheck());
+
+    }
+    private void HandleCameraRotation()
+    {
+        GameManager.Instance.camera.transform.rotation = gameObject.transform.rotation * Quaternion.Euler(rotationOffset);
 
     }
     private void GetInput()
@@ -129,29 +135,6 @@ public class MovementController : NetworkBehaviour
             // Smoothly rotate towards the target rotation
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
-        else
-        {
-            //// When there's no movement input, adjust only the up vector
-
-            //// Get the current forward direction
-            //Vector3 currentForward = transform.forward;
-
-            //// Project the current forward onto the plane perpendicular to gravity
-            //Vector3 projectedForward = Vector3.ProjectOnPlane(currentForward, gravityUp).normalized;
-
-            //// Handle the case when the projected forward vector is too small
-            //if (projectedForward.sqrMagnitude < 0.001f)
-            //{
-            //    // Use a default forward vector perpendicular to gravityUp
-            //    projectedForward = Vector3.Cross(transform.right, gravityUp).normalized;
-            //}
-
-            //// Create a rotation with the current forward and adjusted up vector
-            //Quaternion currentRotation = Quaternion.LookRotation(projectedForward, gravityUp);
-
-            //// Apply the rotation
-            //transform.rotation = currentRotation;
-        }
     }
     private Vector3 GetMovementDirection()
     {
@@ -166,19 +149,28 @@ public class MovementController : NetworkBehaviour
     {
         if (moveInput.y > 0)
         {
-            animator.SetTrigger(animatorFowardTrigger);
+            animator.SetFloat("L_speed", 1);
+            animator.SetFloat("R_speed", 1);
+        }
+        else
+        {
+            animator.SetFloat("L_speed", -1);
+            animator.SetFloat("R_speed", -1);
         }
         if(moveInput.y < 0.05f && moveInput.x > 0)
         {
-            animator.SetTrigger(animatorRightTrigger);
+            animator.SetFloat("L_speed", 1);
+            animator.SetFloat("R_speed", -1);
         }
         if(moveInput.y < 0.05f && moveInput.x < 0)
         {
-            animator.SetTrigger(animatorLeftTrigger);
+            animator.SetFloat("L_speed", -1);
+            animator.SetFloat("R_speed", 1);
         }
         if(moveInput == Vector2.zero)
         {
-            animator.SetTrigger(animatorIdle);
+            animator.SetFloat("L_speed", 0);
+            animator.SetFloat("R_speed", 0);
         }
     }
 
@@ -299,9 +291,9 @@ public class MovementController : NetworkBehaviour
             NetworkObject bullet = SpawnProjectile(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
             bullet.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
             bullet.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);                 //I stared into the abbyss
-                                                                                                                            //And abbyss responed
+                                                                                                                            //And abbyss responed...
                                                                                                                             //transform.foward = transform.right * -1
-                                                                                                                            //I never looked at the abbyss again
+                                                                                                                            //I never looked into the abbyss ever again
 
         }
         else
