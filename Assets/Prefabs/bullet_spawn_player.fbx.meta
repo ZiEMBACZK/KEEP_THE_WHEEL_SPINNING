@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: b9ae764dd145d84489dd0f708e7d24b2
+guid: baa09c4369b8abb448e299b6145034f5
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -12,7 +12,12 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: beige_dark
+      name: beige_bright1
+    second: {fileID: 2100000, guid: 7fd8d74b2238f7447a6c8c2dcdd5e23f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: beige_dark1
     second: {fileID: 2100000, guid: f463a47d064b0fe4f9f75cf09e2c383d, type: 2}
   - first:
       type: UnityEngine:Material
@@ -27,7 +32,7 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: grey
+      name: grey1
     second: {fileID: 2100000, guid: fc7f3fc622cb9d640910c5db9d115a3c, type: 2}
   - first:
       type: UnityEngine:Material
@@ -127,7 +132,7 @@ ModelImporter:
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
-  avatarSetup: 1
+  avatarSetup: 0
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
   importBlendShapeDeformPercent: 1
   remapMaterialsIfMaterialImportModeIsNone: 0
