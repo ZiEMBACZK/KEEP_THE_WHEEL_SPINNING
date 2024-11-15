@@ -2,7 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 
-public class ProjectileBehaviour : NetworkBehaviour
+public class localProjectileBehaviour : MonoBehaviour
 {
     public Vector3 bulletDirection;
     public float bulletSpeed;

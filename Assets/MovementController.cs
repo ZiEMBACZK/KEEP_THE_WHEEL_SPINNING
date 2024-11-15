@@ -33,6 +33,7 @@ public class MovementController : NetworkBehaviour
     private Vector3 moveDirection;
     [SerializeField] private Camera playerCamera;
     [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private GameObject localBullet;
     [SerializeField] private GameObject explosionVFX;
     [SerializeField] private string animatorFowardTrigger;
     [SerializeField] private string animatorLeftTrigger;
@@ -57,6 +58,8 @@ public class MovementController : NetworkBehaviour
 
     void Update()
     {
+                float latency = (NetworkManager.Singleton.LocalTime.TimeAsFloat - NetworkManager.Singleton.ServerTime.TimeAsFloat);
+        Debug.Log(latency);
         // Move the player
         if (IsOwner) {
 
@@ -298,24 +301,36 @@ public class MovementController : NetworkBehaviour
         }
         else
         {
-            if(IsOwner)
+            if (IsOwner)
             {
-                RequstNetworkObjectAndFireServerRpc(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
+                GameObject bullet = ObjectPool.Instance.GetObject();
+                bullet.transform.position = projectileSpawnPosition.position;
+                bullet.gameObject.GetComponent<localProjectileBehaviour>().planetTransform = planetTransform;
+                bullet.gameObject.GetComponent<localProjectileBehaviour>().bulletDirection = transform.right * (-1);                 //I stared into the abbyss
+                float latency = (NetworkManager.Singleton.LocalTime.TimeAsFloat - NetworkManager.Singleton.ServerTime.TimeAsFloat);
+                StartCoroutine(DestroyBulletCorutine(latency, bullet));
+                Vector3 predictedPosition = bullet.GetComponent<localProjectileBehaviour>().GetFuturePosition(latency);
+                RequstNetworkObjectAndFireServerRpc(predictedPosition, projectileSpawnPosition.rotation);
 
             }
         }
+    }
+    private IEnumerator DestroyBulletCorutine(float time, GameObject localBulletPrefab)
+    {
+        yield return new WaitForSeconds(time);
+        ObjectPool.Instance.ReturnObject(localBulletPrefab);
     }
 
     [ServerRpc]
     private void RequstNetworkObjectAndFireServerRpc(Vector3 position,Quaternion rotation)
     {
+        
         NetworkObject networkObject = NetworkObjectPool.Singleton.GetNetworkObject(projectilePrefab, position, rotation);
 
         // Spawn the NetworkObject over the network
         networkObject.Spawn();
         networkObject.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
         networkObject.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);
-        Debug.Log(transform.forward);
 
     }
     private NetworkObject SpawnProjectile(Vector3 position, Quaternion rotation)

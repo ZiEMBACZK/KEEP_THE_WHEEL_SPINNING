@@ -93,6 +93,7 @@ GameObject:
   - component: {fileID: 3988442658432096193}
   - component: {fileID: 4698272471275774953}
   - component: {fileID: 8437708724395352092}
+  - component: {fileID: 9109215959290474324}
   m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
@@ -280,6 +281,7 @@ MonoBehaviour:
     m_Bits: 64
   playerCamera: {fileID: 0}
   projectilePrefab: {fileID: 3010071664185319976, guid: 58300297eea8fff479b4119cfd5b41df, type: 3}
+  localBullet: {fileID: 3010071664185319976, guid: 0931fc00192c3e14fb926760f4874e23, type: 3}
   explosionVFX: {fileID: 4593184484909914552, guid: 2e1e9506f5904a64b81744324fb7cd50, type: 3}
   animatorFowardTrigger: 
   animatorLeftTrigger: 
@@ -322,6 +324,21 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &9109215959290474324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001533401275756617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  TransitionStateInfoList: []
+  m_Animator: {fileID: 9127549367011073180}
 --- !u!1 &5215484092836533000
 GameObject:
   m_ObjectHideFlags: 0
@@ -347,7 +364,7 @@ Transform:
   m_GameObject: {fileID: 5215484092836533000}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.002, y: 0.733, z: 1.254}
+  m_LocalPosition: {x: 0.002, y: 0.733, z: 1.479}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
