@@ -14,7 +14,6 @@ public class ProjectileBehaviour : NetworkBehaviour
     }
     private void Start()
     {
-        gameObject.GetComponent<Collider>().enabled = false;
         planetTransform = FauxGravitySingleton.Instance.PlanetTransfom;
         GameManager.Instance.onSceneRestart.AddListener(OnSceneReload);
 
@@ -76,7 +75,7 @@ public class ProjectileBehaviour : NetworkBehaviour
         if(other.GetComponent<MovementController>())
         {
             Debug.Log("Bullet Hit!");
-            other.GetComponent<MovementController>().PlayerHitBehaviour();
+            other.GetComponent<MovementController>().RequestHITPLayer();
 
         }
         

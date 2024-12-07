@@ -1,37 +1,72 @@
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 public class PlayerSpawner : NetworkBehaviour
 {
-    public GameObject playerPrefab; // Assign the player prefab in the Inspector
+    [SerializeField] private GameObject playerPrefab;
+
+    public static PlayerSpawner Instance { get; private set; }
+
+    private readonly Dictionary<ulong, GameObject> spawnedPlayers = new Dictionary<ulong, GameObject>();
+
+    private void Awake()
+    {
+        // Ensure only one instance exists
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
 
     private void Start()
     {
-        OnSceneChanged();
-    }
-
-    private void OnSceneChanged()
-    {
-        // Only the server (host) can spawn player objects
         if (IsHost)
         {
-            // Loop through all connected clients, including the host
-            foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
-            {
-                SpawnPlayerForClient(client.ClientId);
-            }
+            SpawnPlayersAtGameStart();
 
         }
-        
     }
 
-    private void SpawnPlayerForClient(ulong clientId)
+    private void SpawnPlayersAtGameStart()
     {
-        // Instantiate the player prefab
-        GameObject playerInstance = Instantiate(playerPrefab);
+        foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (!spawnedPlayers.ContainsKey(clientId))
+            {
+                SpawnPlayer(clientId);
+            }
+        }
+    }
 
-        // Spawn the player object and associate it with the client
+    private void SpawnPlayer(ulong clientId)
+    {
+        // Instantiate and spawn the player prefab
+        GameObject playerInstance = Instantiate(playerPrefab, transform.position, Quaternion.identity);
         playerInstance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+
+        // Track the spawned player
+        spawnedPlayers[clientId] = playerInstance;
+    }
+
+    public GameObject GetPlayer(ulong clientId)
+    {
+        // Return the player's GameObject if it exists
+        if (spawnedPlayers.TryGetValue(clientId, out var playerObject))
+        {
+            return playerObject;
+        }
+        return null;
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 }

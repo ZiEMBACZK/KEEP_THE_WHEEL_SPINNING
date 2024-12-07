@@ -14,7 +14,7 @@ public class localProjectileBehaviour : MonoBehaviour
     }
     private void Start()
     {
-        gameObject.GetComponent<Collider>().enabled = false;
+        //gameObject.GetComponent<Collider>().enabled = false;
         planetTransform = FauxGravitySingleton.Instance.PlanetTransfom;
         GameManager.Instance.onSceneRestart.AddListener(OnSceneReload);
 
@@ -76,7 +76,7 @@ public class localProjectileBehaviour : MonoBehaviour
         if(other.GetComponent<MovementController>())
         {
             Debug.Log("Bullet Hit!");
-            other.GetComponent<MovementController>().PlayerHitBehaviour();
+            other.GetComponent<MovementController>().RequestHITPLayer();
 
         }
         

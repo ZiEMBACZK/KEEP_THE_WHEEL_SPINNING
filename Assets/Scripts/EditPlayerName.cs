@@ -40,11 +40,23 @@ public class EditPlayerName : MonoBehaviour {
     }
 
     private void Start() {
+            UI_InputWindow.Show_Static("Player Name", playerName, "abcdefghijklmnopqrstuvxywzABCDEFGHIJKLMNOPQRSTUVXYWZ .,-", 20,
+            () => {
+                // Cancel
+            },
+            (string newName) => {
+                playerName = newName;
+
+                playerNameText.text = playerName;
+
+                OnNameChanged?.Invoke(this, EventArgs.Empty);
+            });
         OnNameChanged += EditPlayerName_OnNameChanged;
     }
 
     private void EditPlayerName_OnNameChanged(object sender, EventArgs e) {
         LobbyManager.Instance.UpdatePlayerName(GetPlayerName());
+        LobbyManager.Instance.Authenticate(GetPlayerName());
     }
 
     public string GetPlayerName() {

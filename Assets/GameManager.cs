@@ -66,7 +66,15 @@ public class GameManager : NetworkBehaviour
     [ServerRpc]
     private void RequestRestartSceneServerRpc()
     {
+        Debug.Log("ShouldRestartScene");
+        restartStarted = false;
+        onSceneRestart.Invoke();
+        NetworkManager.Singleton.SceneManager.LoadScene("NGO_Setup", UnityEngine.SceneManagement.LoadSceneMode.Single);
+    }
+    private void StartRestartGameCourutine()
+    {
         StartCoroutine(RestartGameCorutine(5));
+
     }
     private IEnumerator RestartGameCorutine(float waitBeforeSceneChange)
     {

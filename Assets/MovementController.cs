@@ -1,9 +1,7 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.UIElements;
 
 public class MovementController : NetworkBehaviour
 {
@@ -12,7 +10,8 @@ public class MovementController : NetworkBehaviour
     [SerializeField] string MoveInputStrng;
     [SerializeField] string fireInputString;
     [SerializeField] float fireInput;       //yea i wonder why its float too
-    [SerializeField] float speed;
+    [SerializeField] float maxSpeed;
+    [SerializeField] float maxAcceleration;
     [SerializeField] float drag;
     [SerializeField] bool inputEnabled = false;
     [SerializeField] Transform projectileSpawnPosition;
@@ -40,6 +39,7 @@ public class MovementController : NetworkBehaviour
     [SerializeField] private string animatorRightTrigger;
     [SerializeField] private string animatorIdle;
     [SerializeField] private Vector3 rotationOffset;
+    [SerializeField] private GameObject[] cubes;
 
     private void Start()
     {
@@ -58,21 +58,20 @@ public class MovementController : NetworkBehaviour
 
     void Update()
     {
-                float latency = (NetworkManager.Singleton.LocalTime.TimeAsFloat - NetworkManager.Singleton.ServerTime.TimeAsFloat);
-        Debug.Log(latency);
         // Move the player
-        if (IsOwner) {
+        if (IsOwner)
+        {
 
-            GetInput();
-            //Gravity();        //we dont talk abut gravity here
-            //ApplyDrag();      //we dont talk about drag either
-            SnapToSphere();
-            HandleRotation();
-            MoveCharacter();
-            DrawForwardDirection(transform, 2f, Color.green);
-            UpdateShootTimer();
-            animateMovement();
-            HandleCameraRotation();
+            //GetInput();
+            ////Gravity();        //we dont talk abut gravity here
+            ////ApplyDrag();      //we dont talk about drag either
+            ////SnapToSphere();
+            //HandleRotation();
+            ////MoveCharacter();
+            //DrawForwardDirection(transform, 2f, Color.green);
+            //UpdateShootTimer();
+            //animateMovement();
+            //HandleCameraRotation();
 
         }
 
@@ -103,7 +102,7 @@ public class MovementController : NetworkBehaviour
     }
     private void GetInput()
     {
-        if(inputEnabled)
+        if (inputEnabled)
         {
             GetFireInput();
             GetMovementDirection();
@@ -127,11 +126,7 @@ public class MovementController : NetworkBehaviour
         if (moveInput.magnitude > 0.1f)
         {
             // Project the movement direction onto the plane perpendicular to gravity
-            Vector3 desiredForward = Vector3.ProjectOnPlane(moveDirection, gravityUp).normalized;
-            if (Vector3.Dot(transform.forward, desiredForward) < 0 && moveInput.x != 1 && moveInput.x != -1)
-            {
-                desiredForward = -desiredForward;
-            }
+            Vector3 desiredForward = Vector3.ProjectOnPlane(GetComponent<Rigidbody>().linearVelocity, gravityUp).normalized;
             // Create a rotation that looks in the desired forward direction with the correct up vector
             Quaternion targetRotation = Quaternion.LookRotation(desiredForward, gravityUp);
 
@@ -147,34 +142,6 @@ public class MovementController : NetworkBehaviour
         moveDirection = transform.right * moveInput.x + transform.forward * moveInput.y;
         return moveDirection;
 
-    }
-    private void animateMovement()
-    {
-        if (moveInput.y > 0)
-        {
-            animator.SetFloat("L_speed", 1);
-            animator.SetFloat("R_speed", 1);
-        }
-        else
-        {
-            animator.SetFloat("L_speed", -1);
-            animator.SetFloat("R_speed", -1);
-        }
-        if(moveInput.y < 0.05f && moveInput.x > 0)
-        {
-            animator.SetFloat("L_speed", 1);
-            animator.SetFloat("R_speed", -1);
-        }
-        if(moveInput.y < 0.05f && moveInput.x < 0)
-        {
-            animator.SetFloat("L_speed", -1);
-            animator.SetFloat("R_speed", 1);
-        }
-        if(moveInput == Vector2.zero)
-        {
-            animator.SetFloat("L_speed", 0);
-            animator.SetFloat("R_speed", 0);
-        }
     }
 
     private float GetFireInput()
@@ -226,7 +193,17 @@ public class MovementController : NetworkBehaviour
     }
     private void MoveCharacter()
     {
-        transform.Translate(moveDirection.normalized * speed * Time.deltaTime, Space.World);
+        GetDesiredVelocity();
+        //transform.Translate(velocity, Space.World);
+    }
+    private void GetDesiredVelocity()
+    {
+        Vector3 acceleration = new Vector3(moveInput.x, 0f, moveInput.y) * maxSpeed;
+        velocity += acceleration * Time.deltaTime;
+        float maxSpeedChange = maxAcceleration * Time.deltaTime;
+        velocity.x = Mathf.MoveTowards(velocity.x, acceleration.x, maxSpeedChange);
+        velocity.z = Mathf.MoveTowards(velocity.z, acceleration.z, maxSpeedChange);
+
     }
     void SnapToSphere()
     {
@@ -237,19 +214,38 @@ public class MovementController : NetworkBehaviour
         // Position the character at the correct distance from the planet's center
         transform.position = planetTransform.position + gravityUp * groundDistance2;
     }
-    public void PlayerHitBehaviour()
+    [ServerRpc]
+    public void PlayerHitBehaviourServerRpc()
     {
-        if(IsOwner)
+        ToogleInput(false);
+        playerModel.SetActive(false);
+        GameObject explosion = Instantiate(explosionVFX, transform);
+        explosion.transform.SetParent(null);
+        moveInput = Vector2.zero;
+        //Implement explosion effect
+        GameManager.Instance.RestartGame();
+
+
+    }
+    public void RequestHITPLayer()
+    {
+        if (IsHost)
         {
             ToogleInput(false);
             playerModel.SetActive(false);
             GameObject explosion = Instantiate(explosionVFX, transform);
-            moveDirection = Vector3.zero;
+            moveInput = Vector2.zero;
             //Implement explosion effect
             GameManager.Instance.RestartGame();
+        }
+        else
+        {
+            if (IsOwner)
+            {
+                PlayerHitBehaviourServerRpc();
+            }
 
         }
-
     }
     private void ToogleInput(bool state)
     {
@@ -281,15 +277,15 @@ public class MovementController : NetworkBehaviour
 
 
     void Jump()
-        {
-            // Implement jump logic
-            Debug.Log("Jump");
-        }
+    {
+        // Implement jump logic
+        Debug.Log("Jump");
+    }
 
     void Fire()
     {
         ResetShootTimer();
-        if(IsHost)
+        if (IsHost)
         {
             NetworkObject bullet = SpawnProjectile(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
             bullet.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
@@ -322,9 +318,9 @@ public class MovementController : NetworkBehaviour
     }
 
     [ServerRpc]
-    private void RequstNetworkObjectAndFireServerRpc(Vector3 position,Quaternion rotation)
+    private void RequstNetworkObjectAndFireServerRpc(Vector3 position, Quaternion rotation)
     {
-        
+
         NetworkObject networkObject = NetworkObjectPool.Singleton.GetNetworkObject(projectilePrefab, position, rotation);
 
         // Spawn the NetworkObject over the network
