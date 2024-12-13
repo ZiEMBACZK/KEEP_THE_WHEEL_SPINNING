@@ -45,7 +45,6 @@ public class OrbitCamera : MonoBehaviour
     Quaternion gravityAlignment = Quaternion.identity;
 
     Quaternion orbitRotation;
-    public static OrbitCamera Instance { get; private set; }
 
 
     Vector3 CameraHalfExtends
@@ -72,12 +71,6 @@ public class OrbitCamera : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
         DontDestroyOnLoad(gameObject);
     }
     private void OnEnable()
@@ -236,12 +229,5 @@ public class OrbitCamera : MonoBehaviour
     {
         float angle = Mathf.Acos(direction.y) * Mathf.Rad2Deg;
         return direction.x < 0f ? 360f - angle : angle;
-    }
-    public void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
     }
 }

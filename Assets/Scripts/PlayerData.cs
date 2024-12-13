@@ -1,0 +1,19 @@
+using System;
+using Unity.Netcode;
+using UnityEngine;
+
+public struct PlayerData : IEquatable<PlayerData>, INetworkSerializable
+{
+    public ulong clientId;
+    public bool isReady;
+    public bool Equals(PlayerData other)
+    {
+        return clientId == other.clientId;
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref clientId);    
+        serializer.SerializeValue(ref isReady);    
+    }
+}

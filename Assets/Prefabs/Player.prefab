@@ -90,10 +90,10 @@ GameObject:
   - component: {fileID: 288497661769243935}
   - component: {fileID: 3907782516374637640}
   - component: {fileID: 3988442658432096193}
+  - component: {fileID: 8507948237702080977}
   - component: {fileID: 4698272471275774953}
   - component: {fileID: 8437708724395352092}
   - component: {fileID: 9109215959290474324}
-  - component: {fileID: 8507948237702080977}
   - component: {fileID: 5588966921387059567}
   m_Layer: 7
   m_Name: Player
@@ -225,6 +225,42 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &8507948237702080977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001533401275756617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c7304afc0ec5bb42ac0c8a8e70aca60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerInputSpace: {fileID: 0}
+  maxSpeed: 10
+  maxAcceleration: 10
+  maxAirAcceleration: 1
+  jumpHeight: 2
+  maxAirJumps: 0
+  maxGroundAngle: 25
+  maxStairsAngle: 50
+  maxSnapSpeed: 100
+  probeDistance: 1
+  probeMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  stairsMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  projectileSpawnPosition: {fileID: 3607607765564878718}
+  shootTimer: 0
+  projectilePrefab: {fileID: 3010071664185319976, guid: 58300297eea8fff479b4119cfd5b41df, type: 3}
+  planetTransform: {fileID: 0}
+  shootCooldown: 1
+  explosionVFX: {fileID: 4593184484909914552, guid: 2e1e9506f5904a64b81744324fb7cd50, type: 3}
+  playerModel: {fileID: 2522136402687482972}
 --- !u!114 &4698272471275774953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -321,34 +357,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   TransitionStateInfoList: []
   m_Animator: {fileID: 9127549367011073180}
---- !u!114 &8507948237702080977
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1001533401275756617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c7304afc0ec5bb42ac0c8a8e70aca60, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerInputSpace: {fileID: 0}
-  maxSpeed: 10
-  maxAcceleration: 10
-  maxAirAcceleration: 1
-  jumpHeight: 2
-  maxAirJumps: 0
-  maxGroundAngle: 25
-  maxStairsAngle: 50
-  maxSnapSpeed: 100
-  probeDistance: 1
-  probeMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  stairsMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
 --- !u!135 &5588966921387059567
 SphereCollider:
   m_ObjectHideFlags: 0

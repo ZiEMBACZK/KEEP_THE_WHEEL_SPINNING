@@ -1,7 +1,9 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class MovingSphere : NetworkBehaviour 
+public class MovingSphere : NetworkBehaviour
 {
 
     [SerializeField]
@@ -54,6 +56,16 @@ public class MovingSphere : NetworkBehaviour
     int stepsSinceLastGrounded, stepsSinceLastJump;
     Vector3 playerInput;
     Animator animator;
+    [SerializeField] Transform projectileSpawnPosition;
+    [SerializeField] private float shootTimer;
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private Transform planetTransform;
+    [SerializeField] private float shootCooldown;
+    private InputAction fireAction;
+    [SerializeField] private GameObject explosionVFX;
+    [SerializeField] private GameObject playerModel;
+    [SerializeField] private bool noInput;
+    [SerializeField] public bool isDead;
 
     void OnValidate()
     {
@@ -62,7 +74,7 @@ public class MovingSphere : NetworkBehaviour
     }
 
     void Awake()
-    { 
+    {
         if (!IsOwner)
             return;
     }
@@ -74,20 +86,29 @@ public class MovingSphere : NetworkBehaviour
         body.useGravity = false;
         OnValidate();
         animator = GetComponentInChildren<Animator>();
-        Camera cam = FindFirstObjectByType<Camera>();
+        Camera cam = GameManager.Instance.playerCamera;
         playerInputSpace = cam.transform;
-        OrbitCamera.Instance.focus = gameObject.transform;
-        OrbitCamera.Instance.enabled = true;
-        
+        cam.GetComponent<OrbitCamera>().focus = gameObject.transform;
+        cam.GetComponent<OrbitCamera>().enabled = true;
+        StartCoroutine(GameManager.Instance.AnimateCamera());
+        planetTransform = GameManager.Instance.planetTransform;
+        fireAction = InputSystem.actions.FindAction("Fire");
+
     }
 
     void Update()
     {
         if (!IsOwner)
             return;
+        UpdateShootTimer();
         AnimateMovement();
-        playerInput.x = Input.GetAxis("Horizontal");
-        playerInput.y = Input.GetAxis("Vertical");
+        if(!noInput)
+        {
+            playerInput.x = Input.GetAxis("Horizontal");
+            playerInput.y = Input.GetAxis("Vertical");
+            GetFireInput();
+
+        }
         playerInput = Vector2.ClampMagnitude(playerInput, 1f);
 
         if (playerInputSpace)
@@ -104,13 +125,16 @@ public class MovingSphere : NetworkBehaviour
         desiredVelocity =
             new Vector3(playerInput.x, 0f, playerInput.y) * maxSpeed;
 
-        desiredJump |= Input.GetButtonDown("Jump");
+        //desiredJump |= Input.GetButtonDown("Jump");
     }
 
     void FixedUpdate()
     {
         if (!IsOwner)
             return;
+        if (noInput)
+            return;
+          
         Vector3 gravity = CustomGravity.GetGravity(body.position, out upAxis);
         UpdateState();
         AdjustVelocity();
@@ -185,7 +209,7 @@ public class MovingSphere : NetworkBehaviour
         {
             contactNormal = upAxis;
         }
-        if(velocity.magnitude > 0.1f)
+        if (velocity.magnitude > 0.1f)
         {
             //Vector3 desiredForward = Vector3.ProjectOnPlane(GetComponent<Rigidbody>().linearVelocity, upAxis).normalized;
             Vector3 desiredForward = ProjectDirectionOnPlane(velocity, upAxis);
@@ -346,4 +370,178 @@ public class MovingSphere : NetworkBehaviour
         return (stairsMask & (1 << layer)) == 0 ?
             minGroundDotProduct : minStairsDotProduct;
     }
+    void Fire()
+    {
+        ResetShootTimer();
+        if (IsHost)
+        {
+            NetworkObject bullet = SpawnProjectile(projectileSpawnPosition.position, projectileSpawnPosition.rotation);
+            bullet.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
+            bullet.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);                 //I stared into the abbyss
+                                                                                                                            //And abbyss responed...
+                                                                                                                            //transform.foward = transform.right * -1
+                                                                                                                            //I never looked into the abbyss ever again
+
+        }
+        else
+        {
+            if (IsOwner)
+            {
+                GameObject bullet = ObjectPool.Instance.GetObject();
+                bullet.transform.position = projectileSpawnPosition.position;
+                bullet.gameObject.GetComponent<localProjectileBehaviour>().planetTransform = planetTransform;
+                bullet.gameObject.GetComponent<localProjectileBehaviour>().bulletDirection = transform.right * (-1);                 //I stared into the abbyss
+                float latency = (NetworkManager.Singleton.LocalTime.TimeAsFloat - NetworkManager.Singleton.ServerTime.TimeAsFloat);
+                StartCoroutine(DestroyBulletCorutine(latency, bullet));
+                Vector3 predictedPosition = bullet.GetComponent<localProjectileBehaviour>().GetFuturePosition(latency);
+                RequstNetworkObjectAndFireServerRpc(predictedPosition, projectileSpawnPosition.rotation);
+
+            }
+        }
+    }
+    [ServerRpc]
+
+    private void RequstNetworkObjectAndFireServerRpc(Vector3 position, Quaternion rotation)
+    {
+
+        NetworkObject networkObject = NetworkObjectPool.Singleton.GetNetworkObject(projectilePrefab, position, rotation);
+
+        // Spawn the NetworkObject over the network
+        networkObject.Spawn();
+        networkObject.gameObject.GetComponent<ProjectileBehaviour>().planetTransform = planetTransform;
+        networkObject.gameObject.GetComponent<ProjectileBehaviour>().bulletDirection = transform.right * (-1);
+
+    }
+    private NetworkObject SpawnProjectile(Vector3 position, Quaternion rotation)
+    {
+        // Get an instance from the pool
+        NetworkObject networkObject = NetworkObjectPool.Singleton.GetNetworkObject(projectilePrefab, position, rotation);
+
+        // Spawn the NetworkObject over the network
+        networkObject.Spawn();
+        return networkObject;
+    }
+    private void ResetShootTimer()
+    {
+        shootTimer = 0;
+    }
+    private IEnumerator DestroyBulletCorutine(float time, GameObject localBulletPrefab)
+    {
+        yield return new WaitForSeconds(time);
+        ObjectPool.Instance.ReturnObject(localBulletPrefab);
+    }
+    private float GetFireInput()
+    {
+        float fireInput = 0;
+        fireInput = fireAction.ReadValue<float>();
+        if (fireInput > 0)
+        {
+            if (CanShoot())
+            {
+                Fire();
+
+            }
+        }
+        return fireInput;
+
+    }
+    private bool CanShoot()
+    {
+
+        if (shootTimer >= shootCooldown)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    private void UpdateShootTimer()
+    {
+        shootTimer += Time.deltaTime;
+    }
+    public void RequestHITPLayer()
+    {
+        if (IsHost)
+        {
+            playerModel.SetActive(false);
+            GameObject explosion = Instantiate(explosionVFX, transform);
+            noInput = true;
+            isDead = true;
+            GameManager.Instance.ChangeScoreServerRpc();
+            PlayerDeathBeahaviourClientRpc();
+                StartCoroutine(RespawnCourutineClient());
+
+            //Implement explosion effect
+        }
+        else
+        {
+            if (IsOwner)
+            {
+                playerModel.SetActive(false);
+                GameObject explosion = Instantiate(explosionVFX, transform);
+                noInput = true;
+                isDead = true;
+                body.isKinematic = true;
+                GameManager.Instance.ChangeScoreServerRpc();
+                StartCoroutine(RespawnCourutineHost());
+                
+            }
+
+        }
+    }
+    private IEnumerator RespawnCourutineClient()
+    {
+        yield return new WaitForSeconds(3);
+        playerModel.SetActive(true);
+        noInput = false;
+        isDead = false;
+        RespawnPlayerClientRpc();
+        
+    }
+    private IEnumerator RespawnCourutineHost()
+    {
+        yield return new WaitForSeconds(3);
+        playerModel.SetActive(true);
+        noInput = false;
+        isDead = false;
+        RespawnPlayerServerRpc();
+        
+    }
+    [ServerRpc(RequireOwnership =false)]
+    public void PlayerDeathBeahaviourServerRpc(ServerRpcParams rpcparams = default)
+    {
+        playerModel.SetActive(false);
+        GameObject explosion = Instantiate(explosionVFX, transform);
+    }
+    [ClientRpc]
+    public void PlayerDeathBeahaviourClientRpc()
+    {
+        playerModel.SetActive(false);
+        GameObject explosion = Instantiate(explosionVFX, transform);
+    }
+    [ServerRpc(RequireOwnership = default)]
+    public void RespawnPlayerServerRpc()
+    {
+        playerModel.SetActive(true);
+        noInput = false;
+        isDead = false;
+        transform.position = GameManager.Instance.spawnPoints[Random.Range(0, 3)].position;
+
+    }
+    [ClientRpc(RequireOwnership = false)]
+    public void RespawnPlayerClientRpc()
+    {
+        playerModel.SetActive(true);
+        noInput = false;
+        isDead = false;
+        body.isKinematic = false;
+        transform.position = GameManager.Instance.spawnPoints[Random.Range(0, 3)].position;
+
+    }
+    private void FreezPosition()
+    {
+    }
+
 }

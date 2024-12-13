@@ -27,6 +27,7 @@ public class LobbyManager : MonoBehaviour {
 
 
     public event EventHandler OnLeftLobby;
+    public event EventHandler OnAutheticated;
 
     public event EventHandler<LobbyEventArgs> OnJoinedLobby;
     public event EventHandler<LobbyEventArgs> OnJoinedLobbyUpdate;
@@ -74,6 +75,7 @@ public class LobbyManager : MonoBehaviour {
         AuthenticationService.Instance.SignedIn += () => {
             // do nothing
             Debug.Log("Signed in! " + AuthenticationService.Instance.PlayerId);
+            OnAutheticated?.Invoke(this, EventArgs.Empty);
 
             RefreshLobbyList();
         };
@@ -333,6 +335,7 @@ public class LobbyManager : MonoBehaviour {
             Lobby lobby = await LobbyService.Instance.QuickJoinLobbyAsync(options);
             joinedLobby = lobby;
 
+            await StartClientWithRelay(lobby.Data[KEY_RELAY_CODE].Value);
             OnJoinedLobby?.Invoke(this, new LobbyEventArgs { lobby = lobby });
         } catch (LobbyServiceException e) {
             OnLobbyException?.Invoke(e);

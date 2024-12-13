@@ -1,7 +1,10 @@
+using DG.Tweening;
 using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using TMPro;
 using Unity.Netcode;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -12,76 +15,114 @@ using UnityEngine.UI;
 
 public class SimpleUIManager : NetworkBehaviour
 {
-    bool shouldJoinLobby;
+    [SerializeField] private Button CreateLobbyButton;
+    [SerializeField] private Button QuickJoinButton;
+    [SerializeField] private Toggle ReadyCheck;
+    [SerializeField] bool allPlayersReady;
+    [SerializeField] public UnityEvent tankDisApearEffectEvent;
     private void OnEnable()
     {
-        LobbyManager.OnLobbyException += HandleLobbyException;
-        LobbyManager.Instance.OnJoinedLobby += ChangeScene;
+
     }
 
     private void OnDisable()
     {
-        LobbyManager.OnLobbyException -= HandleLobbyException;
-        LobbyManager.Instance.OnJoinedLobby -= ChangeScene;
+
+    }
+
+    private void LobbyManager_OnKickedFromLobby(object sender, LobbyManager.LobbyEventArgs e)
+    {
+    }
+
+    private void LobbyManager_OnLeftLobby(object sender, EventArgs e)
+    {
+        CreateLobbyButton.gameObject.SetActive(true);
+        QuickJoinButton.gameObject.SetActive(true);
+        ReadyCheck.gameObject.SetActive(false);
+    }
+
+    private void LobbyManager_OnJoinedLobby(object sender, LobbyManager.LobbyEventArgs e)
+    {
+        FadeOut(QuickJoinButton, 0.5f);
+        FadeOut(CreateLobbyButton, 0.5f);
+
+        
+        ReadyCheck.gameObject.SetActive(true);
+
+
+    }
+    private void LobbyManager_onAuthenticated(object sender, EventArgs e)
+    {
+        FadeInButton(CreateLobbyButton, 1f);
+        FadeInButton(QuickJoinButton, 1f);
+        CreateLobbyButton.gameObject.SetActive(true);
+        QuickJoinButton.gameObject.SetActive(true);
+
+        ReadyCheck.gameObject.SetActive(false);
+
+
+    }
+    private void FadeInButton(Button button, float duration)
+    {
+        button.GetComponentInChildren<Image>().DOFade(1f, duration);
+        button.GetComponentInChildren<TextMeshProUGUI>().DOFade(1f, duration);
+    }
+    private void FadeOut(Button button, float duration)
+    {
+        button.GetComponentInChildren<Image>().DOFade(0f, duration);
+        
+        button.GetComponentInChildren<TextMeshProUGUI>().DOFade(0f, duration).OnComplete(() =>
+        {
+
+            button.gameObject.SetActive(false);
+
+        });
+    }
+
+    private void LobbyManager_OnLobbyListChanged(object sender, LobbyManager.OnLobbyListChangedEventArgs e)
+    {
     }
     UnityEvent startGameEvent;
     private void Awake()
     {
 
-        GetComponent<Button>().onClick.AddListener(() => {
-            TryQuickJoin();
+        CreateLobbyButton.onClick.AddListener(() =>
+        {
+            OnCreateLobbyClicked();
         });
-        shouldJoinLobby = true;
-    }
-    private void HandleLobbyException(Exception e)
-    {
-        if (e is LobbyServiceException lobbyException)
+        QuickJoinButton.onClick.AddListener(() =>
         {
-            if (lobbyException.Reason == LobbyExceptionReason.NoOpenLobbies)
-            {
-                if (shouldJoinLobby)
-                {
-                    LobbyManager.Instance.CreateLobby("lobbyName", 2, false);
-                }
-            }
-            else
-            {
-                Debug.LogError($"Unexpected lobby error: {lobbyException.Message}");
-            }
-        }
-        else
-        {
-            Debug.LogError($"Unhandled exception: {e.Message}");
-        }
+            OnQuickJoinClicked();
+        });
+        ReadyCheck.onValueChanged.AddListener(ToggleReadyCheck);
     }
-    private void ChangeScene(object sender, LobbyManager.LobbyEventArgs e)
+    private void Start()
     {
-        Debug.Log(e.lobby.LobbyCode);
-        StartCoroutine(WaitBeforeStartingLobby(e));
-    }
-    private IEnumerator WaitBeforeStartingLobby(LobbyManager.LobbyEventArgs e)
-    {
-        yield return new WaitUntil(() => e.lobby.AvailableSlots == 0);
-        yield return new WaitForSeconds(5f);
-        if(IsHost)
-        {
-            NetworkManager.Singleton.SceneManager.LoadScene("NGO_Setup", LoadSceneMode.Single);
+        CreateLobbyButton.gameObject.SetActive(false);
+        QuickJoinButton.gameObject.SetActive(false);
+        ReadyCheck.gameObject.SetActive(false);
+        LobbyManager.Instance.OnLobbyListChanged += LobbyManager_OnLobbyListChanged;
+        LobbyManager.Instance.OnJoinedLobby += LobbyManager_OnJoinedLobby;
+        LobbyManager.Instance.OnLeftLobby += LobbyManager_OnLeftLobby;
+        LobbyManager.Instance.OnKickedFromLobby += LobbyManager_OnKickedFromLobby;
+        LobbyManager.Instance.OnAutheticated += LobbyManager_onAuthenticated;
 
-        }
     }
-    private void TryQuickJoin()
+    private void OnCreateLobbyClicked()
+    {
+        LobbyManager.Instance.CreateLobby("LobbyName", 2, false);
+        
+    }
+    private void OnQuickJoinClicked()
     {
         LobbyManager.Instance.QuickJoinLobby();
     }
-    private void Update()
+    private void ToggleReadyCheck(bool isReady)
     {
+        // GameManager.Instance.SetPlayerReadyServerRpc(isReady);
+       GameManager.Instance.AddReadyStateToPlayersDataServerRpc(isReady);
     }
-    private void StartGameBehaviour()
-    {
-        //LobbyManager.Instance.OnLobbyListChanged();
-    }
-    private void ChageSceneName()
-    {
 
-    }
+
 }
+

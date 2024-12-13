@@ -49,7 +49,6 @@ public class MovementController : NetworkBehaviour
             fireAction = InputSystem.actions.FindAction(fireInputString);
             planetTransform = FauxGravitySingleton.Instance.PlanetTransfom;
             inputEnabled = true;
-            GameManager.Instance.onSceneRestart.AddListener(ResetSceneBehaviour);
             GameManager.Instance.camera.Follow = gameObject.transform;
 
         }
@@ -69,7 +68,7 @@ public class MovementController : NetworkBehaviour
             //HandleRotation();
             ////MoveCharacter();
             //DrawForwardDirection(transform, 2f, Color.green);
-            //UpdateShootTimer();
+            UpdateShootTimer();
             //animateMovement();
             //HandleCameraRotation();
 
@@ -223,7 +222,6 @@ public class MovementController : NetworkBehaviour
         explosion.transform.SetParent(null);
         moveInput = Vector2.zero;
         //Implement explosion effect
-        GameManager.Instance.RestartGame();
 
 
     }
@@ -236,7 +234,6 @@ public class MovementController : NetworkBehaviour
             GameObject explosion = Instantiate(explosionVFX, transform);
             moveInput = Vector2.zero;
             //Implement explosion effect
-            GameManager.Instance.RestartGame();
         }
         else
         {
@@ -271,7 +268,6 @@ public class MovementController : NetworkBehaviour
     }
     private void OnDestroy()
     {
-        GameManager.Instance.onSceneRestart.RemoveListener(ResetSceneBehaviour);
     }
 
 
